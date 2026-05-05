@@ -14,6 +14,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from app.runtime import configure_runtime
+
+configure_runtime()
+
 from fastembed import TextEmbedding
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
@@ -96,20 +100,20 @@ class Searcher:
             vectors_config=VectorParams(size=EMBED_DIM, distance=Distance.COSINE),
         )
 
-        # Embed in batches of 64 — fastembed is CPU-bound and that batch size is sweet spot.
+        # Embed and upsert in small batches to keep the API startup memory-friendly.
         BATCH = 64
-        points: list[PointStruct] = []
         for start in range(0, len(self.docs), BATCH):
             batch = self.docs[start:start + BATCH]
             texts = [d["title"] + " " + d["text"] for d in batch]
             vectors = list(self.embedder.embed(texts))
+            points: list[PointStruct] = []
             for i, (d, v) in enumerate(zip(batch, vectors)):
                 points.append(PointStruct(
                     id=start + i,
                     vector=v.tolist(),
                     payload={"doc_id": d["doc_id"], "title": d["title"], "text": d["text"]},
                 ))
-        self.client.upsert(collection_name=COLLECTION, points=points)
+            self.client.upsert(collection_name=COLLECTION, points=points)
 
     # ── retrieval ───────────────────────────────────────────────────────
     @staticmethod

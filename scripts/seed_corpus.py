@@ -272,7 +272,7 @@ def main() -> None:
     with corpus_path.open("w", encoding="utf-8") as f:
         for d in docs:
             f.write(json.dumps(d, ensure_ascii=False) + "\n")
-    print(f"  wrote {len(docs)} docs → {corpus_path}")
+    print(f"  wrote {len(docs)} docs -> {corpus_path}")
 
     # Pick relevant doc per golden query: any doc in the matching topic.
     by_topic: dict[str, list[str]] = {}
@@ -290,7 +290,7 @@ def main() -> None:
                 "mode_hint": mode,
                 "topic": topic_id,
             }, ensure_ascii=False) + "\n")
-    print(f"  wrote {len(GOLDEN)} queries → {golden_path}")
+    print(f"  wrote {len(GOLDEN)} queries -> {golden_path}")
     print(f"  seed={SEED} (deterministic)")
 
 

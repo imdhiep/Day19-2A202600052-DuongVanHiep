@@ -27,6 +27,10 @@ FEAST_DIR = REPO_ROOT / "app" / "feast_repo"
 FEAST_DATA = FEAST_DIR / "data"
 FEAST_DATA.mkdir(exist_ok=True)
 
+for state_file in (FEAST_DIR / "registry.db", FEAST_DIR / "online_store.db"):
+    if state_file.exists():
+        state_file.unlink()
+
 # %% [markdown]
 # ## 1. Sinh dữ liệu offline (Parquet) cho 3 feature views
 #
@@ -151,13 +155,20 @@ print({k: v[0] for k, v in features.items()})
 
 # %%
 latencies: list[float] = []
+# Warm the online store connection before measuring steady-state latency.
+for i in range(10):
+    fs.get_online_features(
+        features=REQUEST_FEATURES,
+        entity_rows=[{"user_id": f"u_{i:03d}"}],
+    )
+
 for i in range(100):
     user_id = f"u_{i:03d}"
     t0 = time.perf_counter()
     fs.get_online_features(
         features=REQUEST_FEATURES,
         entity_rows=[{"user_id": user_id}],
-    ).to_dict()
+    )
     latencies.append((time.perf_counter() - t0) * 1000)
 
 latencies.sort()
@@ -185,7 +196,7 @@ else:
 import pandas as pd
 entity_df = pd.DataFrame({
     "user_id": ["u_001", "u_002", "u_003"],
-    "event_timestamp": [NOW - timedelta(hours=2), NOW - timedelta(hours=1), NOW],
+    "event_timestamp": [NOW - timedelta(minutes=30), NOW - timedelta(minutes=15), NOW],
 })
 
 historical = fs.get_historical_features(
