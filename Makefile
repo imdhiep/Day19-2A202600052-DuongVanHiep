@@ -2,12 +2,21 @@
 ## Two paths: lightweight (default, no Docker) and full Docker.
 
 VENV     := .venv
+ifeq ($(OS),Windows_NT)
+PY       := $(VENV)/Scripts/python.exe
+PIP      := $(VENV)/Scripts/pip.exe
+JUPYTER  := $(VENV)/Scripts/jupyter.exe
+JUPYTEXT := $(VENV)/Scripts/jupytext.exe
+UVICORN  := $(VENV)/Scripts/uvicorn.exe
+PYTEST   := $(VENV)/Scripts/pytest.exe
+else
 PY       := $(VENV)/bin/python
 PIP      := $(VENV)/bin/pip
 JUPYTER  := $(VENV)/bin/jupyter
 JUPYTEXT := $(VENV)/bin/jupytext
 UVICORN  := $(VENV)/bin/uvicorn
 PYTEST   := $(VENV)/bin/pytest
+endif
 
 .DEFAULT_GOAL := help
 
@@ -29,7 +38,7 @@ seed: ## [both] (Re)generate data/corpus_vn.jsonl + data/golden_set.jsonl
 	@$(PY) scripts/seed_corpus.py
 
 api: ## [lite] Start FastAPI /search on http://localhost:8000
-	@$(UVICORN) app.main:app --reload --port 8000
+	@$(UVICORN) app.main:app --port 8000
 
 lab: ## [lite] Open Jupyter Lab on http://localhost:8888
 	@$(JUPYTEXT) --to notebook --update notebooks/*.py 2>/dev/null || true
